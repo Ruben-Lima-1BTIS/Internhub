@@ -12,6 +12,8 @@ use App\Models\UserInternship;
 use Illuminate\Support\Facades\Hash;
 use App\Mail\UserCreatedMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Rules\StrongPassword;
 
 class HRController extends Controller
 {
@@ -65,15 +67,15 @@ class HRController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'password' => ['required', 'string', 'confirmed', new StrongPassword()],
             'role' => 'required|string',
-            'company_id' => 'nullable|integer|max:50',
+            'company_id' => 'nullable|integer|exists:companies,id',
         ]);
 
-        $rawPassword = $validated['password'];
+        $validated['password'] = Hash::make($validated['password']);
 
         $validated2 = $request->validate([
-            'class_id' => 'nullable|integer|max:50',
+            'class_id' => 'nullable|integer|exists:classes,id',
         ]);
 
         try {
@@ -83,10 +85,11 @@ class HRController extends Controller
                 UserClass::create($validated2);
             }
         } catch (\Exception $e) {
-            dd($e);
+            Log::error('User creation failed', ['exception' => $e]);
+            return back()->withErrors('User could not be created. Please try again.');
         }
 
-        Mail::to($user->email)->send(new UserCreatedMail($user->email, $rawPassword));
+        Mail::to($user->email)->send(new UserCreatedMail($user->email));
 
         return back()->with('success', 'User created successfully!');
     }
@@ -100,7 +103,7 @@ class HRController extends Controller
         ]);
 
         $validated2 = $request->validate([
-            'user_id' => 'nullable|integer|max:50',
+            'user_id' => 'nullable|integer|exists:users,id',
         ]);
 
         try {
@@ -133,81 +136,25 @@ class HRController extends Controller
         return back()->with('success', 'Internship created successfully!');
     }
 
-    public function createSupervisor(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'company_id' => 'required|exists:companies,id',
-        ]);
-
-
-        $rawPassword = $validated['password'];
-
-        try {
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($rawPassword),
-                'role' => User::ROLE_SUPERVISOR,
-                'company_id' => $validated['company_id'],
-                'first_login' => 1,
-            ]);
-        } catch (\Exception $e) {
-            return back()->withErrors($e->getMessage());
-        }
-
-
-
-        return back()->with('success', 'Supervisor created successfully!');
-    }
-
-    public function createStudent(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'class_id' => 'required|exists:classes,id',
-        ]);
-
-        $rawPassword = $validated['password'];
-
-        try {
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($rawPassword),
-                'role' => User::ROLE_STUDENT,
-                'class_id' => $validated['class_id'],
-                'first_login' => 1,
-            ]);
-        } catch (\Exception $e) {
-            return back()->withErrors($e->getMessage());
-        }
-
-        return back()->with('success', 'Student created successfully!');
-    }
-
-
     public function assignUserInternship(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'role' => 'required|in:student,supervisor',
             'internship_id' => 'required|exists:internships,id',
+            'student_id' => 'required_if:role,student|exists:users,id',
+            'supervisor_id' => 'required_if:role,supervisor|exists:users,id',
         ]);
 
-        $userId = $request->role === 'student'
-            ? $request->student_id
-            : $request->supervisor_id;
+        $userId = $validated['role'] === 'student'
+            ? $validated['student_id']
+            : $validated['supervisor_id'];
 
-        if (!$userId) {
-            return back()->withErrors('Please select a user.');
-        }
+        $user = User::where('id', $userId)
+            ->where('role', $validated['role'])
+            ->firstOrFail();
 
         $exists = UserInternship::where('user_id', $userId)
-            ->where('internship_id', $request->internship_id)
+            ->where('internship_id', $validated['internship_id'])
             ->exists();
 
         if ($exists) {
@@ -216,23 +163,11 @@ class HRController extends Controller
 
         UserInternship::create([
             'user_id' => $userId,
-            'internship_id' => $request->internship_id,
+            'internship_id' => $validated['internship_id'],
         ]);
 
         return back()->with('success', 'User assigned to internship successfully!');
     }
-
-    /*
-    supervisor
-    student
-    coordinator
-    company
-    internship
-    class
-    unassing student/supervisor from internship
-    (in case of mistake or change of internship)
-    (if student changes internship, it should maintain the hours already logged, but just change the internship_id in the user_internship pivot table when assigning the new internship)
-    */
 
     public function deleteSupervisor(Request $request)
     {
@@ -336,6 +271,4 @@ class HRController extends Controller
 
         return back()->with('success', 'User unassigned from internship successfully!');
     }
-
-
 }

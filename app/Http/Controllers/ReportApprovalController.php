@@ -20,9 +20,9 @@ class ReportApprovalController extends Controller
         }
 
         $report->update([
-            'status'                  => $status,
+            'status' => $status,
             'coordinator_reviewed_by' => Auth::id(),
-            'reviewed_at'             => now(),
+            'reviewed_at' => now(),
         ]);
 
         $label = ucfirst($status);
@@ -30,67 +30,71 @@ class ReportApprovalController extends Controller
         return back()->with('success', "Report {$label} successfully.");
     }
 
-    private function getCoordinatorClass()
+    private function getCoordinatorClasses()
     {
         return UserClass::where('user_id', Auth::id())
             ->with('classModel')
-            ->first()
-            ?->classModel;
+            ->get()
+            ->pluck('classModel')
+            ->filter();
     }
 
     private function isAuthorized(Report $report): bool
     {
-        $class = $this->getCoordinatorClass();
+        $classIds = $this->getCoordinatorClasses()->pluck('id');
 
-        return $class && UserClass::where('class_id', $class->id)
+        return $classIds->isNotEmpty() && UserClass::whereIn('class_id', $classIds)
             ->where('user_id', $report->student_id)
             ->exists();
     }
 
     public function index(Request $request)
     {
-        $coordinatorClass = $this->getCoordinatorClass();
+        $coordinatorClasses = $this->getCoordinatorClasses();
 
-        if (!$coordinatorClass) {
+        if ($coordinatorClasses->isEmpty()) {
             return back()->with('error', 'You are not assigned to any class.');
         }
 
-        $classStudentIds = UserClass::where('class_id', $coordinatorClass->id)->pluck('user_id');
+        $classStudentIds = UserClass::whereIn('class_id', $coordinatorClasses->pluck('id'))->pluck('user_id');
 
         $classStudents = User::whereIn('id', $classStudentIds)
             ->where('role', 'student')
+            ->with('userClass') // eager load so we can attach class_id
             ->get(['id', 'name']);
 
         $cleanedStudents = $classStudents->map(fn($s) => [
-            'id'   => $s->id,
+            'id' => $s->id,
             'name' => $s->name,
+            'class_id' => $s->userClass?->class_id,
         ])->all();
 
         $selectedStudentId = $request->integer('student_id');
-        $isValidSelection  = $selectedStudentId && $classStudents->pluck('id')->contains($selectedStudentId);
+        $isValidSelection = $selectedStudentId && $classStudents->pluck('id')->contains($selectedStudentId);
 
-        $pendingReports  = collect();
+        $pendingReports = collect();
         $approvedReports = collect();
         $rejectedReports = collect();
-        $stats           = null;
+        $stats = null;
 
         if ($isValidSelection) {
             $baseQuery = Report::with(['student', 'internship', 'reviewer'])
                 ->where('student_id', $selectedStudentId);
 
-            $pendingReports  = (clone $baseQuery)->where('status', 'pending')->latest()->get();
+            $pendingReports = (clone $baseQuery)->where('status', 'pending')->latest()->get();
             $approvedReports = (clone $baseQuery)->where('status', 'approved')->latest('reviewed_at')->get();
             $rejectedReports = (clone $baseQuery)->where('status', 'rejected')->latest('reviewed_at')->get();
 
             $stats = [
-                'student'       => $classStudents->find($selectedStudentId),
-                'totalPending'  => $pendingReports->count(),
+                'student' => $classStudents->find($selectedStudentId),
+                'totalPending' => $pendingReports->count(),
                 'totalApproved' => $approvedReports->count(),
                 'totalRejected' => $rejectedReports->count(),
             ];
         }
 
         return view('coordinator.reports.index', compact(
+            'coordinatorClasses',
             'cleanedStudents',
             'selectedStudentId',
             'pendingReports',
@@ -110,5 +114,5 @@ class ReportApprovalController extends Controller
         return $this->handleReview($id, 'rejected');
     }
 
-    
+
 }

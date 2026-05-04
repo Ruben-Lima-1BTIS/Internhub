@@ -16,8 +16,7 @@ class UserCreatedMail extends Mailable
      * Create a new message instance.
      */
     public function __construct(
-        public string $email,
-        public string $rawpassword
+        public string $email
     ) {
     }
 

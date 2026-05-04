@@ -8,6 +8,8 @@ use App\Models\Hour;
 use App\Models\Internship;
 use App\Models\UserInternship;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LoghourController extends Controller
 {
@@ -76,21 +78,28 @@ class LoghourController extends Controller
             'end_time.after' => 'End time must be after start time.',
         ]);
 
-        $hoursQuery = Hour::where('student_id', $studentId)
-            ->whereDate('date', $validated['date']);
+        DB::beginTransaction();
 
-        $hoursQuery->clone()->where('status', 'rejected')->delete();
+        try {
+            $existingHours = Hour::where('student_id', $studentId)
+                ->whereDate('date', $validated['date'])
+                ->lockForUpdate()
+                ->get();
 
-        if ($hoursQuery->clone()->where('status', '!=', 'rejected')->exists()) {
-            return back()->withErrors('You already logged hours for this day.');
-        }
+            if ($existingHours->where('status', '!=', 'rejected')->count() > 0) {
+                DB::rollBack();
+                return back()->withErrors('You already logged hours for this day.');
+            }
 
-        $hoursWorked = $this->calculateWorkedHours(
-            $validated['start_time'],
-            $validated['end_time']
-        );
+            $existingHours->where('status', 'rejected')->each->delete();
+
+            $hoursWorked = $this->calculateWorkedHours(
+                $validated['start_time'],
+                $validated['end_time']
+            );
 
         if ($hoursWorked < 4) {
+            DB::rollBack();
             return back()->withErrors('Logged hours must be at least 4 hours, excluding 1 hour for lunch.');
         }
 
@@ -103,7 +112,13 @@ class LoghourController extends Controller
             'duration_hours' => round($hoursWorked, 2),
         ]);
 
+        DB::commit();
         return back()->with('success', 'Hours logged successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error logging hours: ', ['exception' => $e, 'user' => $studentId]);
+            return back()->withErrors('An error occurred while logging hours. Please try again.');
+        }
     }
 
 }
