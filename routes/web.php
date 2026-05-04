@@ -12,6 +12,10 @@ use App\Http\Controllers\HourApprovalController;
 use App\Http\Controllers\ReportApprovalController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ExtrasController;
+
+Route::get('/flyer', [ExtrasController::class, 'flyer'])->name('extras.flyer');
+Route::get('/pricing-table', [ExtrasController::class, 'pricingTable'])->name('extras.pricing_table');
 
 Route::middleware(['guest'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home.index');
