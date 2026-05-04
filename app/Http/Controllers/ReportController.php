@@ -34,13 +34,13 @@ class ReportController extends Controller
     {
         $request->validate([
             'internship_id' => 'required|exists:internships,id',
-            'report_file' => 'required|file|max:5120|mimes:pdf,doc,docx,xlsx,xls,txt,odt',
+            'report_file' => 'required|file|max:5120|mimes:pdf,docx,txt',
         ]);
 
         $student = Auth::user();
         $file = $request->file('report_file');
         $filename = Str::uuid() . '.' . $file->extension();
-        $path = $file->storeAs('reports', $filename, 'private');
+        $path = $file->storeAs('reports', $filename, 'public');
 
 
 

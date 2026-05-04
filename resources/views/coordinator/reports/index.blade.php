@@ -9,7 +9,6 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <form method="GET" action="{{ route('coordinator.reports.index') }}" id="studentForm">
 
-                    {{-- Class filter (only shown when coordinator has multiple classes) --}}
                     @if($coordinatorClasses->count() > 1)
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Class</label>
@@ -23,7 +22,6 @@
                         </div>
                     @endif
 
-                    {{-- Student select — options carry data-class-id for JS filtering --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Select Student</label>
                         <select name="student_id" id="studentSelect"
@@ -50,12 +48,10 @@
                 <x-stat-card title="Student Name"     :value="$stats['student']->name" color="gray"   />
                 <x-stat-card title="Pending Reports"  :value="$stats['totalPending']"  color="yellow" />
                 <x-stat-card title="Approved Reports" :value="$stats['totalApproved']" color="green"  />
-                <x-stat-card title="Rejected Reports" :value="$stats['totalRejected']" color="red"    />
             </div>
 
             <x-pending-reports-table :reports="$pendingReports" />
             <x-reviewed-reports-table :reports="$approvedReports" label="Approved Reports" />
-            <x-reviewed-reports-table :reports="$rejectedReports" label="Rejected Reports" />
 
             @if($pendingReports->count() === 0 && $approvedReports->count() === 0 && $rejectedReports->count() === 0)
                 <x-empty-state message="No reports found for this student" />
