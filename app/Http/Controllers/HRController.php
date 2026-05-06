@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\ClassModel;
 use App\Models\Internship;
 use App\Models\User;
+use App\Services\ResendService;
 use App\Models\UserClass;
 use App\Models\UserInternship;
 use Illuminate\Support\Facades\Hash;
@@ -62,7 +63,7 @@ class HRController extends Controller
         return back()->with('success', 'Company created successfully!');
     }
 
-    public function createUser(Request $request)
+    public function createUser(Request $request, ResendService $resend)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -89,7 +90,14 @@ class HRController extends Controller
             return back()->withErrors('User could not be created. Please try again.');
         }
 
-        Mail::to($user->email)->send(new UserCreatedMail($user->email));
+        $resend->sendViewEmail(
+            $user->email,
+            'Welcome to InternHub',
+            'emails.user-created',
+            [
+                'user' => $user
+            ]
+        );
 
         return back()->with('success', 'User created successfully!');
     }
