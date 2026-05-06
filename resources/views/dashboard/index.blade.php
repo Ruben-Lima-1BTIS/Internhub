@@ -1,4 +1,3 @@
--- Active: 1767625217593@@127.0.0.1@3306@internhub_nova
 @extends('layouts.auth')
 
 @section('content')
