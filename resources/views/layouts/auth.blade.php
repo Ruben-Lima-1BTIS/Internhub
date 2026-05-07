@@ -21,6 +21,12 @@
                         'roles' => ['admin']
                     ],
                     [
+                        'name' => 'Users',
+                        'route' => 'hr.index',
+                        'icon' => 'users',
+                        'roles' => ['admin']
+                    ],
+                    [
                         'name' => 'Manage Records',
                         'route' => 'hr.delete-records',
                         'icon' => 'tools',

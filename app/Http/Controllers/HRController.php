@@ -20,6 +20,16 @@ use App\Services\GmailService;
 class HRController extends Controller
 {
 
+    public function index()
+    {
+
+        $users = User::all();
+
+
+        return view('hr.index', compact('users'));
+    }
+
+
     public function create()
     {
         return view('hr.create-records', [
