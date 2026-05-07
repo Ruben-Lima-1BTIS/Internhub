@@ -38,4 +38,4 @@ RUN composer require codeat3/blade-radix-icons && \
     composer require postare/blade-mdi && \
     composer require laravel/socialite
 
-CMD php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:8000 -t public
+CMD php artisan migrate && php -S 0.0.0.0:8000 -t public
