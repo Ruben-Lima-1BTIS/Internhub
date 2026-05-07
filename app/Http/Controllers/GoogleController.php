@@ -38,6 +38,8 @@ class GoogleController extends Controller
         return redirect($authUrl);
     }
 
+    
+
     // Handle OAuth callback + send email
     public function callback(Request $request)
     {
@@ -126,5 +128,16 @@ class GoogleController extends Controller
             'isAuthenticated' => true,
             'labels'          => $labels,
         ]);
+
+        
+    }
+     public function sendEmailToMultipleRecipiente()
+    {
+        $authUrl = $this->client->createAuthUrl();
+        return redirect($authUrl);
+    }
+    public function redirect(GmailService $gmail)
+    {
+        return redirect($gmail->authUrl());
     }
 }
