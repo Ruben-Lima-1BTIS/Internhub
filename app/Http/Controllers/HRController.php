@@ -15,6 +15,7 @@ use App\Mail\UserCreatedMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Rules\StrongPassword;
+use App\Services\GmailService;
 
 class HRController extends Controller
 {
@@ -63,7 +64,7 @@ class HRController extends Controller
         return back()->with('success', 'Company created successfully!');
     }
 
-    public function createUser(Request $request,ResendService $resend)
+    public function createUser(Request $request, GmailService $gmail)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -90,7 +91,8 @@ class HRController extends Controller
             return back()->withErrors('User could not be created. Please try again.');
         }
 
-        Mail::to($user->email)->send(new UserCreatedMail($user->email));
+        $html = view('emails.user-created', ['user' => $user])->render();
+        $gmail->send($user->email, 'Welcome, ' . $user->name . '!', $html);
 
         return back()->with('success', 'User created successfully!');
     }

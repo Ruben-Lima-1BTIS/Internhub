@@ -24,15 +24,11 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('login');
 });
 
-Route::get('/google', [GoogleController::class, 'index'])->name('google.index');
-Route::get('/google/connect', [GoogleController::class, 'connect'])->name('google.connect');
-Route::get('/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
-Route::get('/google/signout', [GoogleController::class, 'signout'])->name('google.signout');
-Route::get('/google/labels', [GoogleController::class, 'listLabels'])->name('google.labels');
-Route::get('/send-email', [GoogleController::class, 'sendEmailToMultipleRecipiente'])->name('google.send_email');
 
 Route::middleware(['auth'])->group(function () {
-
+    Route::prefix('google')->name('google.')->group(function () {
+        Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
+    });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -58,6 +54,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/hr/delete/class', [HRController::class, 'deleteClass'])->name('hr.class.delete');
         Route::post('/hr/delete/internship', [HRController::class, 'deleteInternship'])->name('hr.internship.delete');
         Route::post('/hr/delete/unassign', [HRController::class, 'unassignUserInternship'])->name('hr.unassign');
+
+
+        Route::prefix('google')->name('google.')->group(function () {
+            Route::get('/', [GoogleController::class, 'index'])->name('index');
+            Route::get('/connect', [GoogleController::class, 'connect'])->name('connect');
+            Route::get('/callback', [GoogleController::class, 'callback'])->name('callback');
+            Route::get('/signout', [GoogleController::class, 'signout'])->name('signout');
+            Route::get('/labels', [GoogleController::class, 'listLabels'])->name('labels');
+            Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
+        });
     });
 
     Route::middleware('role:student')->group(function () {
