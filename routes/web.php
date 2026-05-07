@@ -13,6 +13,7 @@ use App\Http\Controllers\ReportApprovalController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ExtrasController;
+use App\Http\Controllers\GoogleController;
 
 Route::get('/flyer', [ExtrasController::class, 'flyer'])->name('extras.flyer');
 Route::get('/pricing-table', [ExtrasController::class, 'pricingTable'])->name('extras.pricing_table');
@@ -22,6 +23,9 @@ Route::middleware(['guest'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('auth.showLogin');
     Route::post('/login', [AuthController::class, 'login'])->name('login');
 });
+
+Route::get('/google/callback', [GoogleController::class, 'handleCallback'])->name('google.callback');
+Route::get('/send-email', [GoogleController::class, 'sendEmailToMultipleRecipiente'])->name('google.send_email');
 
 Route::middleware(['auth'])->group(function () {
 
