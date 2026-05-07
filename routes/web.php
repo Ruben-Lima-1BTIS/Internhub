@@ -24,7 +24,11 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('login');
 });
 
-Route::get('/google/callback', [GoogleController::class, 'handleCallback'])->name('google.callback');
+Route::get('/google', [GoogleController::class, 'index'])->name('google.index');
+Route::get('/google/connect', [GoogleController::class, 'connect'])->name('google.connect');
+Route::get('/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
+Route::get('/google/signout', [GoogleController::class, 'signout'])->name('google.signout');
+Route::get('/google/labels', [GoogleController::class, 'listLabels'])->name('google.labels');
 Route::get('/send-email', [GoogleController::class, 'sendEmailToMultipleRecipiente'])->name('google.send_email');
 
 Route::middleware(['auth'])->group(function () {
