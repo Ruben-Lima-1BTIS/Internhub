@@ -13,7 +13,7 @@ FROM php:8.2-fpm AS backend
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git curl unzip libpq-dev libonig-dev libzip-dev zip \
-    && docker-php-ext-install pdo pdo_pgsql mbstring zip \
+    && docker-php-ext-install pdo pdo_mysql mbstring zip
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -38,4 +38,4 @@ RUN composer require codeat3/blade-radix-icons && \
     composer require postare/blade-mdi && \
     composer require laravel/socialite
 
-CMD php artisan migrate --force && php -S 0.0.0.0:10000 -t public
+CMD php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:8000 -t public
