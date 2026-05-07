@@ -63,7 +63,7 @@ class HRController extends Controller
         return back()->with('success', 'Company created successfully!');
     }
 
-    public function createUser(Request $request, ResendService $resend)
+    public function createUser(Request $request,ResendService $resend)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -90,14 +90,7 @@ class HRController extends Controller
             return back()->withErrors('User could not be created. Please try again.');
         }
 
-        $resend->sendViewEmail(
-            $user->email,
-            'Welcome to InternHub',
-            'emails.user-created',
-            [
-                'user' => $user
-            ]
-        );
+        Mail::to($user->email)->send(new UserCreatedMail($user->email));
 
         return back()->with('success', 'User created successfully!');
     }
