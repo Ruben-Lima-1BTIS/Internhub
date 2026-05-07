@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware('role:admin')->group(function () {
 
+        Route::get('/hr', [HRController::class, 'index'])->name('hr.index');
         Route::get('/hr/create', [HRController::class, 'create'])->name('hr.create-records');
         Route::post('/hr/company', [HRController::class, 'createCompany'])->name('hr.company.create');
         Route::post('/hr/class', [HRController::class, 'createClass'])->name('hr.class.create');
