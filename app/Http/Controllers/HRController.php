@@ -7,12 +7,9 @@ use App\Models\Company;
 use App\Models\ClassModel;
 use App\Models\Internship;
 use App\Models\User;
-use App\Services\ResendService;
 use App\Models\UserClass;
 use App\Models\UserInternship;
 use Illuminate\Support\Facades\Hash;
-use App\Mail\UserCreatedMail;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Rules\StrongPassword;
 use App\Services\GmailService;
@@ -22,10 +19,7 @@ class HRController extends Controller
 
     public function index()
     {
-
         $users = User::all();
-
-
         return view('hr.index', compact('users'));
     }
 
@@ -154,8 +148,8 @@ class HRController extends Controller
         $validated = $request->validate([
             'role' => 'required|in:student,supervisor',
             'internship_id' => 'required|exists:internships,id',
-            'student_id' => 'required_if:role,student|exists:users,id',
-            'supervisor_id' => 'required_if:role,supervisor|exists:users,id',
+            'student_id' => 'nullable|required_if:role,student|exists:users,id',
+            'supervisor_id' => 'nullable|required_if:role,supervisor|exists:users,id',
         ]);
 
         $userId = $validated['role'] === 'student'
