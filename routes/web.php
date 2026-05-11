@@ -13,6 +13,7 @@ use App\Http\Controllers\ReportApprovalController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ExtrasController;
+use App\Http\Controllers\GoogleController;
 
 Route::get('/flyer', [ExtrasController::class, 'flyer'])->name('extras.flyer');
 Route::get('/pricing-table', [ExtrasController::class, 'pricingTable'])->name('extras.pricing_table');
@@ -23,8 +24,11 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('login');
 });
 
-Route::middleware(['auth'])->group(function () {
 
+Route::middleware(['auth'])->group(function () {
+    Route::prefix('google')->name('google.')->group(function () {
+        Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
+    });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -36,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware('role:admin')->group(function () {
 
+        Route::get('/hr', [HRController::class, 'index'])->name('hr.index');
         Route::get('/hr/create', [HRController::class, 'create'])->name('hr.create-records');
         Route::post('/hr/company', [HRController::class, 'createCompany'])->name('hr.company.create');
         Route::post('/hr/class', [HRController::class, 'createClass'])->name('hr.class.create');
@@ -50,6 +55,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/hr/delete/class', [HRController::class, 'deleteClass'])->name('hr.class.delete');
         Route::post('/hr/delete/internship', [HRController::class, 'deleteInternship'])->name('hr.internship.delete');
         Route::post('/hr/delete/unassign', [HRController::class, 'unassignUserInternship'])->name('hr.unassign');
+
+
+        Route::prefix('google')->name('google.')->group(function () {
+            Route::get('/', [GoogleController::class, 'index'])->name('index');
+            Route::get('/connect', [GoogleController::class, 'connect'])->name('connect');
+            Route::get('/callback', [GoogleController::class, 'callback'])->name('callback');
+            Route::get('/signout', [GoogleController::class, 'signout'])->name('signout');
+            Route::get('/labels', [GoogleController::class, 'listLabels'])->name('labels');
+            Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
+        });
     });
 
     Route::middleware('role:student')->group(function () {

@@ -10,13 +10,19 @@ use App\Models\User;
 use App\Models\UserClass;
 use App\Models\UserInternship;
 use Illuminate\Support\Facades\Hash;
-use App\Mail\UserCreatedMail;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Rules\StrongPassword;
+use App\Services\GmailService;
 
 class HRController extends Controller
 {
+
+    public function index()
+    {
+        $users = User::all();
+        return view('hr.index', compact('users'));
+    }
+
 
     public function create()
     {
@@ -62,12 +68,12 @@ class HRController extends Controller
         return back()->with('success', 'Company created successfully!');
     }
 
-    public function createUser(Request $request)
+    public function createUser(Request $request, GmailService $gmail)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => ['required', 'string', 'confirmed', new StrongPassword()],
+            'password' => ['required', 'string'],
             'role' => 'required|string',
             'company_id' => 'nullable|integer|exists:companies,id',
         ]);
@@ -89,7 +95,8 @@ class HRController extends Controller
             return back()->withErrors('User could not be created. Please try again.');
         }
 
-        Mail::to($user->email)->send(new UserCreatedMail($user->email));
+        $html = view('emails.user-created', ['user' => $user])->render();
+        $gmail->send($user->email, 'Welcome, ' . $user->name . '!', $html);
 
         return back()->with('success', 'User created successfully!');
     }
@@ -141,8 +148,8 @@ class HRController extends Controller
         $validated = $request->validate([
             'role' => 'required|in:student,supervisor',
             'internship_id' => 'required|exists:internships,id',
-            'student_id' => 'required_if:role,student|exists:users,id',
-            'supervisor_id' => 'required_if:role,supervisor|exists:users,id',
+            'student_id' => 'nullable|required_if:role,student|exists:users,id',
+            'supervisor_id' => 'nullable|required_if:role,supervisor|exists:users,id',
         ]);
 
         $userId = $validated['role'] === 'student'
