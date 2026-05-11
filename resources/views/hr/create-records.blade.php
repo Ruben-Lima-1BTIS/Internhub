@@ -101,11 +101,47 @@
                     ]" />
 
                 <div id="studentWrapper" class="hidden">
-                    <x-select name="student_id" label="Student" :options="$students->map(fn($s) => ['id' => $s->id, 'name' => $s->name])" />
+                    <label class="block mb-2 font-semibold">Filter by Class</label>
+                    <select id="assignClassFilter"
+                        class="border border-gray-300 rounded-lg p-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-slate-500">
+                        <option value="">Select a class</option>
+                        @foreach ($classes as $class)
+                            <option value="{{ $class->id }}">{{ $class->sigla }} — {{ $class->course }}</option>
+                        @endforeach
+                    </select>
+
+                    <label class="block mb-2 font-semibold">Student</label>
+                    <select name="student_id" id="assignStudentSelect"
+                        class="border border-gray-300 rounded-lg p-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-slate-500">
+                        <option value="">Select a class first</option>
+                        @foreach ($students as $student)
+                            <option value="{{ $student->id }}" data-class-id="{{ $student->userClass?->class_id }}">
+                                {{ $student->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div id="supervisorWrapper" class="hidden">
-                    <x-select name="supervisor_id" label="Supervisor" :options="$supervisors->map(fn($s) => ['id' => $s->id, 'name' => $s->name])" />
+                    <label class="block mb-2 font-semibold">Filter by Company</label>
+                    <select id="assignCompanyFilter"
+                        class="border border-gray-300 rounded-lg p-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-slate-500">
+                        <option value="">Select a company</option>
+                        @foreach ($companies as $company)
+                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        @endforeach
+                    </select>
+
+                    <label class="block mb-2 font-semibold">Supervisor</label>
+                    <select name="supervisor_id" id="assignSupervisorSelect"
+                        class="border border-gray-300 rounded-lg p-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-slate-500">
+                        <option value="">Select a company first</option>
+                        @foreach ($supervisors as $supervisor)
+                            <option value="{{ $supervisor->id }}" data-company-id="{{ $supervisor->company_id }}">
+                                {{ $supervisor->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <x-select name="internship_id" label="Internship" required
@@ -119,6 +155,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
+            // --- Create User tab: role toggle ---
             function bindRoleSelect(selectId, wrapperMap) {
                 const select = document.getElementById(selectId);
                 if (!select) return;
@@ -136,9 +173,56 @@
                 "{{ App\Models\User::ROLE_SUPERVISOR }}": document.getElementById("companySelectWrapper"),
             });
 
-            bindRoleSelect("roleSelect", {
-                "student": document.getElementById("studentWrapper"),
-                "supervisor": document.getElementById("supervisorWrapper"),
+            // --- Assign tab: role toggle ---
+            const roleSelect = document.getElementById("roleSelect");
+            const studentWrapper = document.getElementById("studentWrapper");
+            const supervisorWrapper = document.getElementById("supervisorWrapper");
+
+            roleSelect?.addEventListener("change", function () {
+                studentWrapper.classList.toggle("hidden", this.value !== "student");
+                supervisorWrapper.classList.toggle("hidden", this.value !== "supervisor");
+            });
+
+            // --- Assign tab: class → student filter ---
+            const assignStudentSelect = document.getElementById("assignStudentSelect");
+            const allAssignStudentOpts = Array.from(
+                assignStudentSelect.querySelectorAll("option[data-class-id]")
+            );
+
+            document.getElementById("assignClassFilter")?.addEventListener("change", function () {
+                const classId = this.value;
+                const placeholder = assignStudentSelect.querySelector("option[value='']");
+
+                placeholder.textContent = classId ? "Select a student" : "Select a class first";
+                assignStudentSelect.querySelectorAll("option[data-class-id]").forEach(o => o.remove());
+                assignStudentSelect.value = "";
+
+                if (!classId) return;
+
+                allAssignStudentOpts
+                    .filter(o => o.dataset.classId === classId)
+                    .forEach(o => assignStudentSelect.appendChild(o.cloneNode(true)));
+            });
+
+            // --- Assign tab: company → supervisor filter ---
+            const assignSupervisorSelect = document.getElementById("assignSupervisorSelect");
+            const allAssignSupervisorOpts = Array.from(
+                assignSupervisorSelect.querySelectorAll("option[data-company-id]")
+            );
+
+            document.getElementById("assignCompanyFilter")?.addEventListener("change", function () {
+                const companyId = this.value;
+                const placeholder = assignSupervisorSelect.querySelector("option[value='']");
+
+                placeholder.textContent = companyId ? "Select a supervisor" : "Select a company first";
+                assignSupervisorSelect.querySelectorAll("option[data-company-id]").forEach(o => o.remove());
+                assignSupervisorSelect.value = "";
+
+                if (!companyId) return;
+
+                allAssignSupervisorOpts
+                    .filter(o => o.dataset.companyId === companyId)
+                    .forEach(o => assignSupervisorSelect.appendChild(o.cloneNode(true)));
             });
 
         });
