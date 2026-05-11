@@ -51,12 +51,6 @@
                         'roles' => ['supervisor']
                     ],
                     [
-                        'name' => 'Check Student Progress',
-                        'route' => 'dashboard.index',
-                        'icon' => 'users',
-                        'roles' => ['supervisor']
-                    ],
-                    [
                         'name' => 'Check Reports',
                         'route' => 'coordinator.reports.index',
                         'icon' => 'file',
