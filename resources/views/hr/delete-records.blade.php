@@ -405,7 +405,7 @@
 
                 placeholder.textContent = companyId ? 'Select a supervisor' : 'Select a company first';
                 unassignSupervisorSelect.querySelectorAll('option[data-company-id]').forEach(o => o
-                .remove());
+                    .remove());
                 unassignSupervisorSelect.value = '';
 
                 if (!companyId) return;

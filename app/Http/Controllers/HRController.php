@@ -73,7 +73,7 @@ class HRController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => ['required', 'string', new StrongPassword()],
+            'password' => ['required', 'string'],
             'role' => 'required|string',
             'company_id' => 'nullable|integer|exists:companies,id',
         ]);
