@@ -9,6 +9,7 @@ use App\Models\Internship;
 use App\Models\Hour;
 use App\Models\Report;
 use App\Models\UserClass;
+use App\Models\UserInternship;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
@@ -216,8 +217,126 @@ class DashboardService
 
     private function getSupervisorStats(): array
     {
+        $supervisorId = auth()->id();
+
+        $internshipIds = UserInternship::where('user_id', $supervisorId)
+            ->pluck('internship_id')
+            ->unique();
+
+        if ($internshipIds->isEmpty()) {
+            return [
+                'myInternships' => 0,
+                'myStudents' => 0,
+                'internships' => [],
+            ];
+        }
+
+        $internships = Internship::whereIn('id', $internshipIds)
+            ->with('company')
+            ->get();
+
+        $studentIds = UserInternship::whereIn('internship_id', $internshipIds)
+            ->whereHas('user', fn($q) => $q->where('role', User::ROLE_STUDENT))
+            ->pluck('user_id')
+            ->unique();
+
+        if ($studentIds->isEmpty()) {
+            return [
+                'myInternships' => $internships->count(),
+                'myStudents' => 0,
+                'internships' => $internships
+                    ->map(fn($internship) => [
+                        'id' => $internship->id,
+                        'title' => $internship->title,
+                        'company' => $internship->company?->name ?? null,
+                        'students' => [],
+                    ])
+                    ->values(),
+            ];
+        }
+
+        $internships->load([
+            'studentAssignments' => fn($q) => $q->whereIn('user_id', $studentIds),
+        ]);
+
+        $students = User::whereIn('id', $studentIds)
+            ->where('role', User::ROLE_STUDENT)
+            ->get()
+            ->keyBy('id');
+
+        $netMinutes = $this->netMinutesExpr('start_time', 'end_time');
+        $dowExpr = $this->isoDowExpr('date');
+
+        $hoursByStudent = Hour::whereIn('student_id', $studentIds)
+            ->selectRaw("student_id, status, SUM($netMinutes) as total_minutes")
+            ->groupBy('student_id', 'status')
+            ->get()
+            ->groupBy('student_id');
+
+        $weeklyHoursByStudent = Hour::whereIn('student_id', $studentIds)
+            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
+            ->selectRaw("student_id, $dowExpr as day, SUM($netMinutes) / 60 as hours")
+            ->groupBy('student_id', 'day')
+            ->get()
+            ->groupBy('student_id');
+
+        $reportsCount = Report::whereIn('student_id', $studentIds)
+            ->selectRaw('student_id, COUNT(*) as total')
+            ->groupBy('student_id')
+            ->pluck('total', 'student_id');
+
+        $internshipData = $internships->map(function ($internship) use ($students, $hoursByStudent, $weeklyHoursByStudent, $reportsCount) {
+            $studentsData = $internship->studentAssignments
+                ->map(function ($assignment) use ($students, $hoursByStudent, $weeklyHoursByStudent, $reportsCount, $internship) {
+                    $studentId = $assignment->user_id;
+                    $student = $students[$studentId] ?? null;
+                    if (!$student) {
+                        return null;
+                    }
+
+                    $studentHours = $hoursByStudent[$studentId] ?? collect();
+                    $approved = ($studentHours->firstWhere('status', 'approved')->total_minutes ?? 0) / 60;
+                    $pending = ($studentHours->firstWhere('status', 'pending')->total_minutes ?? 0) / 60;
+                    $rejected = ($studentHours->firstWhere('status', 'rejected')->total_minutes ?? 0) / 60;
+
+                    $required = $internship->total_hours_required ?? 0;
+                    $remaining = max($required - $approved - $pending, 0);
+
+                    $weekly = $weeklyHoursByStudent[$studentId] ?? collect();
+                    $weeklyHours = collect($this->weekdayNumbers())
+                        ->map(fn($day) => round($weekly->firstWhere('day', $day)?->hours ?? 0, 1))
+                        ->values()
+                        ->all();
+
+                    return [
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'internship' => $internship->title ?? null,
+                        'company' => $internship->company?->name ?? null,
+                        'approved_hours' => round($approved, 1),
+                        'pending_hours' => round($pending, 1),
+                        'rejected_hours' => round($rejected, 1),
+                        'remaining_hours' => round($remaining, 1),
+                        'total_required' => $required,
+                        'reports_submitted' => $reportsCount[$studentId] ?? 0,
+                        'weekly_hours' => $weeklyHours,
+                    ];
+                })
+                ->filter()
+                ->values();
+
+            return [
+                'id' => $internship->id,
+                'title' => $internship->title,
+                'company' => $internship->company?->name ?? null,
+                'students' => $studentsData,
+            ];
+        });
+
         return [
-            'myInterns' => Internship::whereHas('supervisorAssignment', fn($q) => $q->where('user_id', auth()->id()))->count(),
+            'myInternships' => $internships->count(),
+            'myStudents' => $studentIds->count(),
+            'internships' => $internshipData,
         ];
     }
 }
