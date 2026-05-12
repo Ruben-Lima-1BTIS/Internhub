@@ -14,6 +14,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ExtrasController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\StudentCalendarController;
 
 Route::get('/flyer', [ExtrasController::class, 'flyer'])->name('extras.flyer');
 Route::get('/pricing-table', [ExtrasController::class, 'pricingTable'])->name('extras.pricing_table');
@@ -21,14 +22,12 @@ Route::get('/pricing-table', [ExtrasController::class, 'pricingTable'])->name('e
 Route::middleware(['guest'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home.index');
     Route::get('/login', [AuthController::class, 'showLogin'])->name('auth.showLogin');
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:3,1')->name('login');
 });
 
 
 Route::middleware(['auth'])->group(function () {
-    Route::prefix('google')->name('google.')->group(function () {
-        Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
-    });
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -56,6 +55,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/hr/delete/internship', [HRController::class, 'deleteInternship'])->name('hr.internship.delete');
         Route::post('/hr/delete/unassign', [HRController::class, 'unassignUserInternship'])->name('hr.unassign');
 
+        Route::prefix('google')->name('google.')->group(function () {
+            Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
+        });
 
         Route::prefix('google')->name('google.')->group(function () {
             Route::get('/', [GoogleController::class, 'index'])->name('index');
@@ -70,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:student')->group(function () {
         Route::get('/myhours', [LoghourController::class, 'index'])->name('student.hours');
         Route::post('/loghours', [LoghourController::class, 'store'])->name('log.hours');
+        Route::get('/calendar', [StudentCalendarController::class, 'index'])->name('student.calendar');
+        Route::post('/calendar/confirm', [StudentCalendarController::class, 'confirm'])->name('student.calendar.confirm');
         Route::get('/reports', [ReportController::class, 'index'])->name('student.reports');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     });

@@ -34,6 +34,7 @@ class GoogleController extends Controller
 
     public function sendEmail()
     {
+        abort_unless(auth()->user()->isAdmin(), 403);
         try {
             $html = view('emails.user-created')->render();
             $this->gmail->send('5488@eclisboa.net', 'Test Email from Laravel', $html);
