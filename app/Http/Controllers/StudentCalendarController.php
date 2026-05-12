@@ -16,12 +16,31 @@ class StudentCalendarController extends Controller
 {
     public function index(Request $request, InternshipCalendarService $calendarService)
     {
-        $data = $calendarService->buildCalendar(
-            $request->user()->id,
+        $studentId = $request->user()->id;
+
+        $initial = $calendarService->buildCalendar(
+            $studentId,
             $request->query('month')
         );
 
-        return view('student.calendar.index', $data);
+        $internship = $initial['internship'];
+        $rangeStart = Carbon::parse($internship->start_date)->startOfMonth();
+        $rangeEnd = Carbon::parse($internship->end_date)->startOfMonth();
+
+        $months = [];
+        $cursor = $rangeStart->copy();
+        while ($cursor->lte($rangeEnd)) {
+            $monthKey = $cursor->format('Y-m');
+            $months[$monthKey] = $calendarService->buildCalendar($studentId, $monthKey);
+            $cursor->addMonth();
+        }
+
+        return view('student.calendar.index', [
+            'months' => $months,
+            'selectedMonthKey' => $initial['month']->format('Y-m'),
+            'stats' => $initial['stats'],
+            'internship' => $internship,
+        ]);
     }
 
     public function confirm(Request $request, InternshipCalendarService $calendarService)
