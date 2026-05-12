@@ -14,6 +14,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ExtrasController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\StudentCalendarController;
 
 Route::get('/flyer', [ExtrasController::class, 'flyer'])->name('extras.flyer');
 Route::get('/pricing-table', [ExtrasController::class, 'pricingTable'])->name('extras.pricing_table');
@@ -71,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:student')->group(function () {
         Route::get('/myhours', [LoghourController::class, 'index'])->name('student.hours');
         Route::post('/loghours', [LoghourController::class, 'store'])->name('log.hours');
+        Route::get('/calendar', [StudentCalendarController::class, 'index'])->name('student.calendar');
+        Route::post('/calendar/confirm', [StudentCalendarController::class, 'confirm'])->name('student.calendar.confirm');
         Route::get('/reports', [ReportController::class, 'index'])->name('student.reports');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     });
