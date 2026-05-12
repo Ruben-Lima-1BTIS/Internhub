@@ -21,14 +21,12 @@ Route::get('/pricing-table', [ExtrasController::class, 'pricingTable'])->name('e
 Route::middleware(['guest'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home.index');
     Route::get('/login', [AuthController::class, 'showLogin'])->name('auth.showLogin');
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:3,1')->name('login');
 });
 
 
 Route::middleware(['auth'])->group(function () {
-    Route::prefix('google')->name('google.')->group(function () {
-        Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
-    });
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -56,6 +54,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/hr/delete/internship', [HRController::class, 'deleteInternship'])->name('hr.internship.delete');
         Route::post('/hr/delete/unassign', [HRController::class, 'unassignUserInternship'])->name('hr.unassign');
 
+        Route::prefix('google')->name('google.')->group(function () {
+            Route::post('/send', [GoogleController::class, 'sendEmail'])->name('send');
+        });
 
         Route::prefix('google')->name('google.')->group(function () {
             Route::get('/', [GoogleController::class, 'index'])->name('index');
