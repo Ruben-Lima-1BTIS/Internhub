@@ -20,9 +20,9 @@ class HRController extends Controller
     public function index()
     {
         $users = User::all();
-        return view('hr.index', compact('users'));
-    }
 
+        return view('hr.index', ['users' => $users]);
+    }
 
     public function create()
     {
