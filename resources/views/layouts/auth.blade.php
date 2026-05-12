@@ -39,6 +39,12 @@
                         'roles' => ['student']
                     ],
                     [
+                        'name' => 'Calendar',
+                        'route' => 'student.calendar',
+                        'icon' => 'calendar',
+                        'roles' => ['student']
+                    ],
+                    [
                         'name' => 'Submit Reports',
                         'route' => 'student.reports',
                         'icon' => 'file-arrow-up',
