@@ -14,16 +14,6 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
-    private function netMinutesExpr(string $start, string $end): string
-    {
-        return match (DB::getDriverName()) {
-            'pgsql' => "GREATEST(EXTRACT(EPOCH FROM ($end::time - $start::time)) / 60 - 60, 0)",
-            'sqlite' => "MAX((strftime('%s', $end) - strftime('%s', $start)) / 60 - 60, 0)",
-            'sqlsrv' => "GREATEST(DATEDIFF(MINUTE, $start, $end) - 60, 0)",
-            'mysql' => "GREATEST(TIMESTAMPDIFF(MINUTE, $start, $end) - 60, 0)",
-            default => throw new \RuntimeException('Unsupported DB driver: ' . DB::getDriverName()),
-        };
-    }
     private function isoDowExpr(string $column): string
     {
         return match (DB::getDriverName()) {
@@ -97,18 +87,17 @@ class DashboardService
             ->groupBy('user_id')
             ->map(fn($items) => $items->first()['internship']);
 
-        $netMinutes = $this->netMinutesExpr('start_time', 'end_time');
         $dowExpr = $this->isoDowExpr('date');
 
         $hoursByStudent = Hour::whereIn('student_id', $studentIds)
-            ->selectRaw("student_id, status, SUM($netMinutes) as total_minutes")
+            ->selectRaw("student_id, status, SUM(duration_hours) as total_hours")
             ->groupBy('student_id', 'status')
             ->get()
             ->groupBy('student_id');
 
         $weeklyHoursByStudent = Hour::whereIn('student_id', $studentIds)
             ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
-            ->selectRaw("student_id, $dowExpr as day, SUM($netMinutes) / 60 as hours")
+            ->selectRaw("student_id, $dowExpr as day, SUM(duration_hours) as hours")
             ->groupBy('student_id', 'day')
             ->get()
             ->groupBy('student_id');
@@ -127,13 +116,13 @@ class DashboardService
                     return null;
 
                 $studentHours = $hoursByStudent[$studentId] ?? collect();
-                $approved = ($studentHours->firstWhere('status', 'approved')->total_minutes ?? 0) / 60;
-                $pending = ($studentHours->firstWhere('status', 'pending')->total_minutes ?? 0) / 60;
-                $rejected = ($studentHours->firstWhere('status', 'rejected')->total_minutes ?? 0) / 60;
+                $approved = $studentHours->firstWhere('status', 'approved')->total_hours ?? 0;
+                $pending = $studentHours->firstWhere('status', 'pending')->total_hours ?? 0;
+                $rejected = $studentHours->firstWhere('status', 'rejected')->total_hours ?? 0;
 
                 $internship = $internships[$studentId] ?? null;
                 $required = $internship?->total_hours_required ?? 0;
-                $remaining = max($required - $approved - $pending, 0);
+                $remaining = max($required - $approved - $pending - $rejected, 0);
 
                 $weekly = $weeklyHoursByStudent[$studentId] ?? collect();
                 $weeklyHours = collect($this->weekdayNumbers())
@@ -177,24 +166,23 @@ class DashboardService
 
         $internship = Internship::whereHas('studentAssignments', fn($q) => $q->where('user_id', $studentId))->first();
 
-        $netMinutes = $this->netMinutesExpr('start_time', 'end_time');
         $dowExpr = $this->isoDowExpr('date');
 
-        $minutesByStatus = Hour::where('student_id', $studentId)
-            ->selectRaw("status, SUM($netMinutes) as total_minutes")
+        $HourByStatus = Hour::where('student_id', $studentId)
+            ->selectRaw("status, SUM(duration_hours) as total_hours")
             ->groupBy('status')
-            ->pluck('total_minutes', 'status');
+            ->pluck('total_hours', 'status');
 
-        $approvedHours = round(($minutesByStatus['approved'] ?? 0) / 60, 1);
-        $pendingHours = round(($minutesByStatus['pending'] ?? 0) / 60, 1);
-        $rejectedHours = round(($minutesByStatus['rejected'] ?? 0) / 60, 1);
+        $approvedHours = round($HourByStatus['approved'] ?? 0, 1);
+        $pendingHours = round($HourByStatus['pending'] ?? 0, 1);
+        $rejectedHours = round($HourByStatus['rejected'] ?? 0, 1);
 
         $totalHoursRequired = $internship?->total_hours_required ?? 0;
         $remainingHours = max($totalHoursRequired - $approvedHours - $pendingHours - $rejectedHours, 0);
 
         $weeklyRaw = Hour::where('student_id', $studentId)
             ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
-            ->selectRaw("$dowExpr as day, SUM($netMinutes) / 60 as hours")
+            ->selectRaw("$dowExpr as day, SUM(duration_hours) as hours")
             ->groupBy('day')
             ->pluck('hours', 'day');
 
@@ -264,18 +252,17 @@ class DashboardService
             ->get()
             ->keyBy('id');
 
-        $netMinutes = $this->netMinutesExpr('start_time', 'end_time');
         $dowExpr = $this->isoDowExpr('date');
 
         $hoursByStudent = Hour::whereIn('student_id', $studentIds)
-            ->selectRaw("student_id, status, SUM($netMinutes) as total_minutes")
+            ->selectRaw("student_id, status, SUM(duration_hours) as total_hours")
             ->groupBy('student_id', 'status')
             ->get()
             ->groupBy('student_id');
 
         $weeklyHoursByStudent = Hour::whereIn('student_id', $studentIds)
             ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
-            ->selectRaw("student_id, $dowExpr as day, SUM($netMinutes) / 60 as hours")
+            ->selectRaw("student_id, $dowExpr as day, SUM(duration_hours) as hours")
             ->groupBy('student_id', 'day')
             ->get()
             ->groupBy('student_id');
@@ -295,12 +282,12 @@ class DashboardService
                     }
 
                     $studentHours = $hoursByStudent[$studentId] ?? collect();
-                    $approved = ($studentHours->firstWhere('status', 'approved')->total_minutes ?? 0) / 60;
-                    $pending = ($studentHours->firstWhere('status', 'pending')->total_minutes ?? 0) / 60;
-                    $rejected = ($studentHours->firstWhere('status', 'rejected')->total_minutes ?? 0) / 60;
+                    $approved = $studentHours->firstWhere('status', 'approved')->total_hours ?? 0;
+                    $pending = $studentHours->firstWhere('status', 'pending')->total_hours ?? 0;
+                    $rejected = $studentHours->firstWhere('status', 'rejected')->total_hours ?? 0;
 
                     $required = $internship->total_hours_required ?? 0;
-                    $remaining = max($required - $approved - $pending, 0);
+                    $remaining = max($required - $approved - $pending - $rejected, 0);
 
                     $weekly = $weeklyHoursByStudent[$studentId] ?? collect();
                     $weeklyHours = collect($this->weekdayNumbers())
