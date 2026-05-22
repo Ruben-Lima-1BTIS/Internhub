@@ -1,6 +1,6 @@
 <div class="max-w-6xl mx-auto px-6 py-24 text-center">
     <h1 class="text-[3rem] font-bold text-slate-900 tracking-[-0.04em]">
-        Track Your Internship the Smart Way
+        Track Your Internship Easily
     </h1>
 
     <p class="text-[1.15rem] text-slate-600 max-w-xl mt-6 mx-auto">

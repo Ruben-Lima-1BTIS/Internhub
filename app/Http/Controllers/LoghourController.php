@@ -49,13 +49,15 @@ class LoghourController extends Controller
     {
         $studentId = $request->user()->id;
 
-        $logs = Hour::where('student_id', $studentId)
+        $baseQuery = Hour::where('student_id', $studentId);
+
+        $logs = (clone $baseQuery)
             ->orderByDesc('date')
             ->get();
 
-        $totalHours = $logs->where('status', 'approved')
-            ->whereNotNull('duration_hours')
-            ->sum(fn($log) => (float) $log->duration_hours);
+        $totalHours = (clone $baseQuery)
+            ->where('status', 'approved')
+            ->sum('duration_hours');
 
         $totalHoursFormatted = $this->formatHours($totalHours);
 
