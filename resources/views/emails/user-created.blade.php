@@ -1,60 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Created</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            font-family: sans-serif;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 32rem;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-header {
+            padding: 2.5rem 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .logo-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.375rem;
+            background-color: #0f172a;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .card-body {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .body-heading {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #0f172a;
+            margin-bottom: 0.75rem;
+        }
+
+        .body-text {
+            font-size: 0.875rem;
+            color: #475569;
+            line-height: 1.625;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            transition: background-color 0.15s ease;
+        }
+
+        .btn:hover {
+            background-color: #1e293b;
+        }
+
+        /* Footer */
+        .card-footer {
+            border-top: 1px solid #f1f5f9;
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6 font-sans">
+<body>
 
-<div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-sm">
+<div class="card">
 
-    <!-- Header -->
-    <div class="px-8 pt-10 pb-6 text-center">
-
-        <div class="mb-6">
-            <div class="inline-flex items-center justify-center w-10 h-10 rounded-md bg-slate-900 text-white font-semibold">
-                IH
-            </div>
+    <div class="card-header">
+        <div class="logo-wrapper">
+            <div class="logo">IH</div>
         </div>
-
-        <h1 class="text-xl font-semibold text-slate-900">
-            Account created
-        </h1>
-
-        <p class="text-sm text-slate-500 mt-2">
-            You’re ready to get started
-        </p>
-
+        <h1 class="card-title">Account created</h1>
+        <p class="card-subtitle">You're ready to get started</p>
     </div>
 
-    <!-- Divider -->
-    <div class="border-t border-slate-100"></div>
+    <hr class="divider">
 
-    <!-- Body -->
-    <div class="px-8 py-8 text-center">
-
-        <h2 class="text-base font-medium text-slate-900 mb-3">
-            Welcome aboard
-        </h2>
-
-        <p class="text-sm text-slate-600 leading-relaxed mb-8">
-            Your account has been successfully created. For security purposes, you’ll be asked to change your password on your first login.
+    <div class="card-body">
+        <h2 class="body-heading">Welcome aboard</h2>
+        <p class="body-text">
+            Your account has been successfully created. For security purposes, you'll be asked to change your password on your first login.
         </p>
-
-        <a href="#"
-           class="inline-block bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition">
-            Sign in
-        </a>
-
+        <a href="#" class="btn">Sign in</a>
     </div>
 
-    <!-- Footer -->
-    <div class="border-t border-slate-100 px-8 py-6 text-center">
-        <p class="text-xs text-slate-400">
-            If you didn’t request this account, you can ignore this email.
+    <div class="card-footer">
+        <p class="footer-text">
+            If you didn't request this account, you can ignore this email.
         </p>
     </div>
 
 </div>
 
 </body>
+</html>
