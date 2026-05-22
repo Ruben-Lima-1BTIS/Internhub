@@ -66,33 +66,29 @@ class GmailService
     }
 
     public function send(string $to, string $subject, string $htmlContent): void
-    {
-        if (!$this->bootClient()) {
-            throw new \Exception('Gmail not authenticated.');
-        }
-
-        $boundary = uniqid(rand(), true);
-        $charset  = 'UTF-8';
-
-        $messageBody  = "--{$boundary}\r\n";
-        $messageBody .= "Content-Type: text/html; charset={$charset}\r\n";
-        $messageBody .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $messageBody .= "{$htmlContent}\r\n";
-        $messageBody .= "--{$boundary}--";
-
-        $rawMessage  = "To: {$to}\r\n";
-        $rawMessage .= "Subject: =?{$charset}?B?" . base64_encode($subject) . "?=\r\n";
-        $rawMessage .= "MIME-Version: 1.0\r\n";
-        $rawMessage .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n\r\n";
-        $rawMessage .= $messageBody;
-
-        $raw = rtrim(strtr(base64_encode($rawMessage), '+/', '-_'), '=');
-
-        $message = new Message();
-        $message->setRaw($raw);
-
-        (new Gmail($this->client))->users_messages->send('me', $message);
+{
+    if (!$this->bootClient()) {
+        throw new \Exception('Gmail not authenticated.');
     }
+
+    $charset = 'UTF-8';
+
+    $rawMessage  = "MIME-Version: 1.0\r\n";
+    $rawMessage .= "Content-Type: text/html; charset={$charset}\r\n";
+    $rawMessage .= "Content-Transfer-Encoding: base64\r\n";
+    $rawMessage .= "To: {$to}\r\n";
+    $rawMessage .= "Subject: =?{$charset}?B?" . base64_encode($subject) . "?=\r\n\r\n";
+    $rawMessage .= chunk_split(base64_encode($htmlContent));
+
+    $raw = rtrim(strtr(base64_encode($rawMessage), '+/', '-_'), '=');
+
+    $message = new Message();
+    $message->setRaw($raw);
+
+    $service = new Gmail($this->client);
+    $service->users_messages->send('me', $message);
+}
+
 
     public function listLabels(): array
     {
