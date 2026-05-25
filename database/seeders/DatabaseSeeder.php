@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        if (app()->environment(['local', 'testing'])) {
+      //  if (app()->environment(['local', 'testing'])) {
             User::factory()->create([
                 'name' => 'Admin',
                 'email' => 'admin@gmail.com',
@@ -23,6 +23,6 @@ class DatabaseSeeder extends Seeder
                 'password' => bcrypt('Admin123!'),
                 'first_login' => 1,
             ]);
-        }
+      //  }
     }
 }
