@@ -175,29 +175,15 @@ class InternshipCalendarService
         $distributionUnits = array_fill(0, $count, $baseEvenUnits);
         $remainingUnits = $units - ($baseEvenUnits * $count);
 
-        $fullExtras = intdiv($remainingUnits, 2);
-        $halfExtras = $remainingUnits % 2;
-
-        if ($fullExtras > 0) {
-            $acc = 0;
-            $added = 0;
-            for ($i = 0; $i < $count && $added < $fullExtras; $i++) {
-                $acc += $fullExtras;
-                if ($acc >= $count) {
-                    $distributionUnits[$i] += 2;
-                    $acc -= $count;
-                    $added++;
-                }
-            }
+        $i = 0;
+        while ($remainingUnits >= 2 && $i < $count) {
+            $distributionUnits[$i] += 2;
+            $remainingUnits -= 2;
+            $i++;
         }
 
-        if ($halfExtras > 0) {
-            $minUnits = min($distributionUnits);
-            $index = array_search($minUnits, $distributionUnits, true);
-            if ($index === false) {
-                $index = 0;
-            }
-            $distributionUnits[$index] += 1;
+        if ($remainingUnits === 1 && $i < $count) {
+            $distributionUnits[$i] += 1;
         }
 
         $plannedMinutesByDate = [];
